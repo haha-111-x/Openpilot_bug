@@ -1,7 +1,3 @@
-
-"""
-Step6: 清洗 + 聚合缺陷数据（保留 issue/pr 时间信息 + filename + file_count）
-"""
 import pandas as pd
 import ast
 import os
@@ -9,13 +5,11 @@ from github import Github, Auth
 from dotenv import load_dotenv
 from tqdm import tqdm
 
-print("🚀 Step 6：清洗 + 聚合缺陷数据（含文件名信息）...")
+print("清洗 + 聚合缺陷数据（含文件名信息）...")
 
-# === 1. 读取文件 ===
 relations_df = pd.read_csv("openpilot_bug_fix_dataset.csv", encoding="utf-8-sig")
 issues_df = pd.read_csv("openpilot_issues_prs.csv", encoding="utf-8-sig")
 
-# === 2. 类型修正 ===
 def to_int_nullable(series):
     try:
         return pd.to_numeric(series, errors="coerce").astype("Int64")
@@ -30,11 +24,9 @@ if "issue_number" in relations_df.columns:
 relations_df["commit_sha"] = relations_df["commit_sha"].astype(str).str.strip()
 relations_df = relations_df[relations_df["commit_sha"].notna() & (relations_df["commit_sha"] != "")]
 
-# === 3. 原始分布 ===
-print("\n📊 原始关系分布：")
+print("\n原始关系分布：")
 print(relations_df["relation_type"].value_counts())
 
-# === 4. 聚合 ===
 agg_rows = []
 
 # issue 相关
@@ -66,16 +58,14 @@ if not pr_related.empty:
 
 # 合并
 if not agg_rows:
-    raise ValueError("❌ 没有可聚合的关系！")
+    raise ValueError("没有可聚合的关系！")
 agg_df = pd.concat(agg_rows, ignore_index=True, sort=False)
 
-# === 5. 合并 Issue 信息 ===
 issues_core = issues_df.rename(columns={"number": "issue_number"})[
     ["issue_number", "title", "description", "labels", "created_at", "closed_at"]
 ]
 final_df = agg_df.merge(issues_core, on="issue_number", how="left")
 
-# === 6. 列整理 ===
 columns_order = [
     "entity_type", "relation_type",
     "issue_number", "pr_number",
@@ -89,8 +79,7 @@ for col in columns_order:
         final_df[col] = None
 final_df = final_df[columns_order]
 
-# === 7. 提取 commit 文件信息 ===
-print("\n📂 正在提取 commit 修改文件名（可能需要几分钟）...")
+print("\n正在提取 commit 修改文件名...")
 
 # 初始化 GitHub
 load_dotenv()
@@ -102,15 +91,15 @@ repo = g.get_repo("commaai/openpilot")
 def parse_commit_list(x):
     # 统一解析为列表类型
     try:
-        # 1️⃣ 先直接处理 None 或空字符串
+        # 先直接处理 None 或空字符串
         if x is None:
             return []
         if isinstance(x, float) and pd.isna(x):
             return []
-        # 2️⃣ 如果本身是 list 或 array，直接转为字符串列表
+        # 如果本身是 list 或 array，直接转为字符串列表
         if isinstance(x, (list, tuple, set)):
             return [str(i).strip() for i in x if str(i).strip()]
-        # 3️⃣ 如果是字符串形式的列表
+        # 如果是字符串形式的列表
         if isinstance(x, str):
             if x.strip() in ("", "[]", "nan"):
                 return []
@@ -122,7 +111,6 @@ def parse_commit_list(x):
                     return [str(val).strip()]
             except Exception:
                 return [x.strip()]
-        # 4️⃣ 其他类型（int、float等）
         return [str(x).strip()]
     except Exception:
         return []
@@ -133,7 +121,7 @@ df_exploded = final_df.explode("commit_sha").reset_index(drop=True)
 df_exploded = df_exploded[df_exploded["commit_sha"].notna() & (df_exploded["commit_sha"] != "")]
 
 commits = sorted(set(df_exploded["commit_sha"].dropna().astype(str)))
-print(f"📦 共 {len(commits)} 个唯一 commit 待提取文件信息")
+print(f"共 {len(commits)} 个唯一 commit 待提取文件信息")
 
 commit_to_files, commit_to_count = {}, {}
 
@@ -148,23 +136,21 @@ for sha in tqdm(commits, desc="Fetching commit files"):
     except Exception as e:
         commit_to_files[sha] = None
         commit_to_count[sha] = 0
-        print(f"⚠️ 无法获取 {sha}: {e}")
+        print(f"无法获取 {sha}: {e}")
 
 df_exploded["filename"] = df_exploded["commit_sha"].map(commit_to_files)
 df_exploded["file_count"] = df_exploded["commit_sha"].map(commit_to_count)
 
-# === 8. 输出统计 ===
-print("\n📊 清洗后关系分布：")
+print("\n清洗后关系分布：")
 print(final_df["relation_type"].value_counts())
 
 if "commit_only" in final_df["relation_type"].unique():
-    print("⚠️ 警告：发现 commit_only，请检查 Step5。")
+    print("警告：发现 commit_only，请检查 Step5。")
 else:
-    print("✅ 数据完整性检查通过。")
+    print("数据完整性检查通过。")
 
-# === 9. 保存结果 ===
 output_path = "openpilot_bug_dataset_final.csv"
 df_exploded.to_csv(output_path, index=False, encoding="utf-8-sig")
-print(f"💾 已保存：{output_path}（共 {len(df_exploded)} 条记录，含 filename + file_count）")
+print(f"已保存：{output_path}（共 {len(df_exploded)} 条记录，含 filename + file_count）")
 
 
