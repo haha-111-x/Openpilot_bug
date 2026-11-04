@@ -15,4 +15,4 @@ closed_discussed_issues = df[
 
 # 3. 保存结果
 closed_discussed_issues.to_csv("openpilot_issues_closed_discussed.csv", index=False, encoding="utf-8-sig")
-print(f"✅ Step 2 已完成筛选，共 {len(closed_discussed_issues)} 条记录已保存到 openpilot_issues_closed_discussed.csv")
+print(f"完成筛选，共 {len(closed_discussed_issues)} 条记录已保存到 openpilot_issues_closed_discussed.csv")
