@@ -1,13 +1,8 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Step 3: 从已关闭 Issue 中提取 PR / Commit 链接
-"""
 import pandas as pd
 import re
 from tqdm import tqdm
 
-print("🔍 Step 3：正在分析 Issue 内部引用（PR / Commit 链接）...")
+print("正在分析 Issue 内部引用（PR / Commit 链接）...")
 
 # 读取筛选后的已关闭、有评论的 Issue
 df = pd.read_csv("openpilot_issues_closed_discussed.csv", encoding="utf-8-sig")
@@ -36,4 +31,4 @@ df[["pr_links", "commit_links"]] = df.progress_apply(
 linked = df[(df["pr_links"].astype(bool)) | (df["commit_links"].astype(bool))]
 linked.to_csv("openpilot_issues_with_links.csv", index=False, encoding="utf-8-sig")
 
-print(f"\n✅ Step 3 完成：共 {len(linked)} 条 Issue 含 PR / Commit 引用")
+print(f"\n完成：共 {len(linked)} 条 Issue 含 PR / Commit 引用")
