@@ -1,20 +1,12 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Step 7: 构建缺陷 URL ↔ 文件修改 数据集（支持 issue↔pr↔commit）
-并额外提取 module_names（顶层）和 sub_module_names（第二层）
-"""
 import pandas as pd
 import ast
 from collections import defaultdict
 from tqdm import tqdm
 
-print("🚀 Step 7：生成 issue / PR URL 与 commit 修改文件映射 ...")
+print("生成 issue / PR URL 与 commit 修改文件映射 ...")
 
-# === 1. 读取第6步结果 ===
 df = pd.read_csv("openpilot_bug_dataset_final.csv", encoding="utf-8-sig")
 
-# === 2. URL 构建逻辑（严格规则） ===
 def build_url(row):
     issue_num = row.get("issue_number")
     pr_num = row.get("pr_number")
@@ -38,7 +30,6 @@ def build_url(row):
 df["html_url"] = df.apply(build_url, axis=1)
 df = df[df["html_url"].notna()].copy()
 
-# === 3. 解析 commit 文件信息为列表 ===
 def parse_filename(x):
     if pd.isna(x) or x in ("", "None"):
         return []
@@ -61,7 +52,6 @@ def parse_filename(x):
 df["filename"] = df["filename"].apply(parse_filename)
 df["file_count"] = pd.to_numeric(df["file_count"], errors="coerce").fillna(0).astype(int)
 
-# === 4. 模块提取函数 ===
 def extract_module(filepath: str) -> str:
     return filepath.split("/")[0] if "/" in filepath else filepath
 
@@ -69,7 +59,6 @@ def extract_sub_module(filepath: str) -> str:
     parts = filepath.split("/")
     return parts[1] if len(parts) > 1 else parts[0]
 
-# === 5. 构建 file_changes 字段，并提取 module_names & sub_module_names ===
 records = []
 
 for url, group in tqdm(df.groupby("html_url"), desc="Aggregating file changes"):
@@ -104,8 +93,7 @@ for url, group in tqdm(df.groupby("html_url"), desc="Aggregating file changes"):
         "sub_module_names": ",".join(sorted(sub_module_names_set))
     })
 
-# === 6. 保存结果 ===
 output_path = "openpilot_bug_filemap.csv"
 pd.DataFrame(records).to_csv(output_path, index=False, encoding="utf-8-sig")
 
-print(f"💾 已生成：{output_path} （共 {len(records)} 条 URL 对应文件修改 + 模块 + 子模块信息）")
+print(f"已生成：{output_path} （共 {len(records)} 条 URL 对应文件修改 + 模块 + 子模块信息）")
