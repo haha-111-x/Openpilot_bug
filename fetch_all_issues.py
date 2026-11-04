@@ -1,12 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-
-"""
-Step 1:
-抓取 commaai/openpilot 从 2022-11-16 起的 Issues / Pull Requests。
-输出：openpilot_issues_prs.csv
-"""
-
 import os
 from datetime import datetime, timezone
 import pandas as pd
@@ -23,14 +14,14 @@ repo = g.get_repo("commaai/openpilot")
 CUTOFF_DATE = datetime(2022, 11, 16, tzinfo=timezone.utc)
 os.makedirs("data", exist_ok=True)
 
-print(f"📥 抓取 openpilot Issues / PRs (仅 {CUTOFF_DATE.date()} 之后)...")
+print(f"抓取 openpilot Issues / PRs (仅 {CUTOFF_DATE.date()} 之后)...")
 
 issues = repo.get_issues(state="all", sort="created", direction="desc")
 records = []
 
 for issue in tqdm(issues, desc="Scanning Issues/PRs"):
     if issue.created_at < CUTOFF_DATE:
-        print(f"⏹️ 到达截止时间 {CUTOFF_DATE.date()}，停止。")
+        print(f"到达截止时间 {CUTOFF_DATE.date()}，停止。")
         break
 
     is_pr = issue.pull_request is not None
@@ -72,4 +63,4 @@ for issue in tqdm(issues, desc="Scanning Issues/PRs"):
 
 df = pd.DataFrame(records)
 df.to_csv("openpilot_issues_prs.csv", index=False, encoding="utf-8-sig")
-print(f"✅ Step 1 完成，共 {len(df)} 条记录。")
+print(f"抓取完成，共 {len(df)} 条记录。")
