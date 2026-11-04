@@ -1,11 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Step 4: 提取修复类 Pull Request 及其关联 commits（不抓 commit_date，但保存 PR 时间）
-输出：
- - openpilot_pr_commit_links.csv (pr_number, pr_created_at, pr_merged_at, commit_sha, commit_message)
- - openpilot_prs_bugfix.csv
-"""
 import re
 import pandas as pd
 from github import Github, Auth
@@ -85,4 +77,4 @@ os.makedirs("data", exist_ok=True)
 df_commits.to_csv("openpilot_pr_commit_links.csv", index=False, encoding="utf-8-sig")
 df_bugfix.to_csv("openpilot_prs_bugfix.csv", index=False, encoding="utf-8-sig")
 
-print(f"✅ Step4 完成：{len(df_bugfix)} 修复类 PR，关联 {len(df_commits)} 条 commit。")
+print(f"完成：{len(df_bugfix)} 修复类 PR，关联 {len(df_commits)} 条 commit。")
